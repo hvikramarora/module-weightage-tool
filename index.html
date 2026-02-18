@@ -195,9 +195,11 @@ const QUESTIONS = [16,10,10,10,6,6,6,6,6];
 function addRow(){
     let table = document.getElementById("moduleTable").getElementsByTagName('tbody')[0];
 
+    let rowCount = table.rows.length + 1;
+
     let row = table.insertRow();
 
-    row.insertCell(0).innerHTML = '<input type="text" placeholder="Module Name">';
+    row.insertCell(0).innerHTML = '<input type="text" value="Module ' + rowCount + '" placeholder="Module Name">';
     row.insertCell(1).innerHTML = '<input type="number" placeholder="%" min="0" max="100">';
     row.insertCell(2).innerHTML = '-';
     row.insertCell(3).innerHTML = '-';
@@ -366,6 +368,8 @@ function getAlternativeCombinations(targetMarks){
 }
 
 // initial rows
+addRow();
+addRow();
 addRow();
 addRow();
 addRow();
