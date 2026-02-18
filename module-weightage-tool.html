@@ -1,0 +1,376 @@
+<!--
+Module Weightage Allocation Tool
+Copyright (c) 2026 Harsh Vikram Arora
+Assistant Professor (Actuarial Science)
+Amity School of Insurance, Banking and Actuarial Science
+hvarora@amity.edu
+
+LICENSE AND DISCLAIMER NOTICE
+
+This software/tool is the intellectual property of Harsh Vikram Arora. You are hereby granted permission to use, copy, share, and distribute this tool freely for academic, educational, and non-commercial purposes, provided that this 
+copyright notice and attribution remain intact and visible in all copies.
+
+COMMERCIAL USE, MODIFICATION, OR REDISTRIBUTION FOR PROFIT is not permitted without explicit written permission from the author.
+
+DISCLAIMER OF WARRANTY:
+This tool is provided "AS IS", without any warranties of any kind, express or implied, including but not limited to accuracy, completeness, reliability, suitability, or fitness for any particular purpose. The author makes no guarantees regarding correctness of output, compliance with institutional policies, academic regulations, examination standards, or any other requirements.
+
+LIMITATION OF LIABILITY:
+Under no circumstances shall the author be held responsible or liable for any direct, indirect, incidental, consequential, academic, administrative, regulatory, financial, or other damages arising from the use, misuse, interpretation, or reliance upon this tool or its outputs.
+
+USER RESPONSIBILITY:
+Users are solely responsible for verifying the correctness, compliance, and suitability of all results before applying them in academic, examination, institutional, or professional contexts.
+
+By using this software, you acknowledge and agree to these terms.
+
+All ownership rights remain exclusively with Harsh Vikram Arora.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Module Weightage Allocation Tool</title>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    margin:0;
+    padding:0;
+    background: linear-gradient(135deg,#1e3c72,#2a5298);
+    color:#333;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+    background:white;
+    padding:20px;
+    margin-top:20px;
+    border-radius:10px;
+    box-shadow:0 0 15px rgba(0,0,0,0.2);
+}
+
+h1{
+    text-align:center;
+    color:#1e3c72;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+}
+
+th, td{
+    padding:10px;
+    border:1px solid #ddd;
+    text-align:center;
+}
+
+th{
+    background:#2a5298;
+    color:white;
+}
+
+input{
+    width:95%;
+    padding:6px;
+}
+
+button{
+    margin:10px 5px;
+    padding:10px 15px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.add-btn{
+    background:#28a745;
+    color:white;
+}
+
+.calc-btn{
+    background:#007bff;
+    color:white;
+}
+
+.remove-btn{
+    background:#dc3545;
+    color:white;
+}
+
+.valid{
+    background:#c8f7c5;
+}
+
+.warning{
+    background:#fff3cd;
+}
+
+.invalid{
+    background:#f8d7da;
+}
+
+footer{
+    text-align:center;
+    padding:20px;
+    color:white;
+    font-size:14px;
+}
+
+@media(max-width:600px){
+    table, th, td{
+        font-size:12px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Module Weightage Allocation Tool</h1>
+
+<p>Enter module name and percentage weightage. Click Calculate to generate valid question distribution.</p>
+
+<table id="moduleTable">
+<thead>
+<tr>
+<th>Module Name</th>
+<th>Weightage %</th>
+<th>Allocated Marks</th>
+<th>Allocated %</th>
+<th>Status</th>
+<th>Remove</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+<button class="add-btn" onclick="addRow()">Add Module</button>
+<button class="calc-btn" onclick="calculate()">Calculate Allocation</button>
+
+<h3 id="summary"></h3>
+<div id="combinationSection" style="display:none; margin-top:20px;">
+
+<h2 style="color:#1e3c72;">Question Combination Allocation</h2>
+
+<table id="combinationTable">
+<thead>
+<tr>
+<th>Module Name</th>
+<th>Total Marks</th>
+<th>Primary Combination</th>
+<th>Alternative Combination</th>
+<th>Another Option</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+
+</div>
+
+</div>
+
+<footer>
+© Harsh Vikram Arora<br>
+Assistant Professor (Actuarial Science)<br>
+Amity School of Insurance, Banking and Actuarial Science<br>
+hvarora@amity.edu
+</footer>
+
+<script>
+
+const TOTAL_MARKS = 76;
+const QUESTIONS = [16,10,10,10,6,6,6,6,6];
+
+function addRow(){
+    let table = document.getElementById("moduleTable").getElementsByTagName('tbody')[0];
+
+    let row = table.insertRow();
+
+    row.insertCell(0).innerHTML = '<input type="text" placeholder="Module Name">';
+    row.insertCell(1).innerHTML = '<input type="number" placeholder="%" min="0" max="100">';
+    row.insertCell(2).innerHTML = '-';
+    row.insertCell(3).innerHTML = '-';
+    row.insertCell(4).innerHTML = '-';
+    row.insertCell(5).innerHTML = '<button class="remove-btn" onclick="removeRow(this)">X</button>';
+}
+
+function removeRow(btn){
+    btn.parentElement.parentElement.remove();
+}
+
+function calculate(){
+
+    let rows = document.querySelectorAll("#moduleTable tbody tr");
+
+    let modules = [];
+
+    rows.forEach(row=>{
+        let name = row.cells[0].querySelector("input").value;
+        let percent = parseFloat(row.cells[1].querySelector("input").value);
+
+        if(name && percent){
+            modules.push({
+                name:name,
+                percent:percent,
+                marks:0,
+                questions:[],
+                row:row
+            });
+        }
+    });
+
+    if(modules.length==0){
+        alert("Please enter modules");
+        return;
+    }
+
+    // reset
+    modules.forEach(m=>m.marks=0);
+
+    // greedy allocation
+    QUESTIONS.forEach(q=>{
+        let bestModule=null;
+        let bestGap=999;
+
+        modules.forEach(m=>{
+            let target = m.percent/100*TOTAL_MARKS;
+            let gap = target - m.marks;
+
+            if(gap>=q && gap<bestGap){
+                bestGap=gap;
+                bestModule=m;
+            }
+        });
+
+        if(!bestModule){
+            // assign to smallest overflow
+            modules.forEach(m=>{
+                let target = m.percent/100*TOTAL_MARKS;
+                let overflow = (m.marks+q)-target;
+
+                if(overflow<bestGap){
+                    bestGap=overflow;
+                    bestModule=m;
+                }
+            });
+        }
+
+        bestModule.marks += q;
+        bestModule.questions.push(q);
+
+    });
+
+    // display
+    modules.forEach(m=>{
+
+        let actualPercent = (m.marks/TOTAL_MARKS*100).toFixed(2);
+
+        let diff = actualPercent - m.percent;
+
+        let status="";
+        let cls="";
+
+        if(Math.abs(diff)<=5){
+            status="OK";
+            cls="valid";
+        }
+        else if(Math.abs(diff)<=10){
+            status="Warning";
+            cls="warning";
+        }
+        else{
+            status="Invalid";
+            cls="invalid";
+        }
+
+        m.row.cells[2].innerHTML = m.marks;
+        m.row.cells[3].innerHTML = actualPercent+"%";
+        m.row.cells[4].innerHTML = status;
+
+        m.row.className=cls;
+
+    });
+
+    document.getElementById("summary").innerHTML =
+        "Total marks allocated: 76 (5×6, 3×10, 1×16)";
+
+    showCombinationTable(modules);
+}
+
+function showCombinationTable(modules){
+
+    let tbody = document.querySelector("#combinationTable tbody");
+    tbody.innerHTML = "";
+
+    modules.forEach(module=>{
+
+        let row = tbody.insertRow();
+
+        let primary = module.questions.join(" + ");
+
+        let alternatives = getAlternativeCombinations(module.marks)
+            .map(c=>c.join(" + "))
+            .filter(c=>c !== primary);
+
+        let alt1 = alternatives[0] || "-";
+        let alt2 = alternatives[1] || "-";
+
+        row.insertCell(0).innerHTML = module.name;
+        row.insertCell(1).innerHTML = module.marks;
+        row.insertCell(2).innerHTML = primary;
+        row.insertCell(3).innerHTML = alt1;
+        row.insertCell(4).innerHTML = alt2;
+
+    });
+
+    document.getElementById("combinationSection").style.display="block";
+
+}
+
+function getAlternativeCombinations(targetMarks){
+    const sizes = [6,10,16];
+    let results = [];
+
+    function findCombos(current, sum, start)
+    {
+        if(sum === targetMarks)
+        {
+            results.push([...current]);
+            return;
+        }
+
+        if(sum > targetMarks) return;
+
+        for(let i=start; i<sizes.length; i++)
+        {
+            current.push(sizes[i]);
+            findCombos(current, sum + sizes[i], i);
+            current.pop();
+        }
+    }
+
+    findCombos([],0,0);
+
+    return results;
+}
+
+// initial rows
+addRow();
+addRow();
+addRow();
+
+</script>
+
+</body>
+</html>
